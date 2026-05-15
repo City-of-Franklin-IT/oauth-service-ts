@@ -3,20 +3,28 @@ import express from "express"
 import { validateConfig, PORT } from "./config.js"
 import { requestLogger } from "./middleware/logging.js"
 import { errorHandler } from "./middleware/errorHandler.js"
+import oauthChallengeMiddleware from "./middleware/oauthChallenge.js"
 import authorizeRouter from "./routes/authorize.js"
 import callbackRouter from "./routes/callback.js"
 import validateRouter from "./routes/validate.js"
+import tokenRouter from "./routes/token.js"
+import discoveryRouter from "./routes/discovery.js"
 
 validateConfig()
 
 const app = express()
 
 app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 app.use(requestLogger)
+
+app.use("/mcp", oauthChallengeMiddleware)
 
 app.use("/", authorizeRouter)
 app.use("/", callbackRouter)
 app.use("/", validateRouter)
+app.use("/", tokenRouter)
+app.use("/", discoveryRouter)
 
 app.use(errorHandler)
 

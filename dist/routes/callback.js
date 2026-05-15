@@ -1,8 +1,10 @@
 import express from "express";
+import { randomBytes } from "crypto";
 import { exchangeCodeForToken } from "../utils/entra.js";
 import { validateToken, checkGroupMembership } from "../utils/jwt.js";
 import { stateCache } from "../utils/cache.js";
-import { ENTRA_REQUIRED_GROUP_ID } from "../config.js";
+import { authCodeCache } from "../utils/authCodeCache.js";
+import { SERVICE_CALLBACK_URI } from "../config.js";
 const router = express.Router();
 /**
  * Handle Entra callback
@@ -23,14 +25,9 @@ router.get("/finance/auth/callback", async (req, res) => {
     }
     stateCache.remove(stateStr);
     try {
-        const tokenResponse = await exchangeCodeForToken(String(code), stateEntry.brokerCodeVerifier);
-        console.log("Token exchange successful, token:", tokenResponse.access_token?.substring(0, 20) + "...");
+        const tokenResponse = await exchangeCodeForToken(String(code), stateEntry.brokerCodeVerifier, SERVICE_CALLBACK_URI);
         const claims = await validateToken(tokenResponse.access_token);
-        console.log("Token validation successful for user:", claims.upn);
-        console.log("Token groups claim:", claims.groups);
-        console.log("Required group ID:", ENTRA_REQUIRED_GROUP_ID);
         if (!checkGroupMembership(claims)) {
-            console.log("User not in required group - groups:", claims.groups);
             const errorUrl = new URL(stateEntry.claudeRedirectUri);
             errorUrl.searchParams.set("error", "access_denied");
             errorUrl.searchParams.set("error_description", "User not in required group");
@@ -38,10 +35,15 @@ router.get("/finance/auth/callback", async (req, res) => {
             res.redirect(302, errorUrl.toString());
             return;
         }
+        const authCode = randomBytes(32).toString("hex");
+        authCodeCache.set(authCode, {
+            access_token: tokenResponse.access_token,
+            expires_in: tokenResponse.expires_in,
+            expiresAt: Date.now() + (tokenResponse.expires_in * 1000)
+        });
         const callbackUrl = new URL(stateEntry.claudeRedirectUri);
-        callbackUrl.searchParams.set("code", tokenResponse.access_token);
+        callbackUrl.searchParams.set("code", authCode);
         callbackUrl.searchParams.set("state", stateStr);
-        console.log("Redirecting to Claude callback with token");
         res.redirect(302, callbackUrl.toString());
     }
     catch (err) {

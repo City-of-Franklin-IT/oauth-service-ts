@@ -22,24 +22,32 @@ export function buildEntraAuthUrl(state, brokerCodeChallenge) {
  *
  * POST ${ ENTRA_AUTHORITY }/${ ENTRA_TENANT_ID }/oauth2/v2.0/token
  */
-export async function exchangeCodeForToken(code, codeVerifier) {
-    const body = new URLSearchParams({
+export async function exchangeCodeForToken(code, codeVerifier, redirectUri) {
+    const tokenUrl = `https://login.microsoftonline.com/${ENTRA_TENANT_ID}/oauth2/v2.0/token`;
+    const bodyObj = {
         grant_type: "authorization_code",
         code,
         client_id: ENTRA_CLIENT_ID,
         client_secret: ENTRA_CLIENT_SECRET,
-        redirect_uri: SERVICE_CALLBACK_URI,
+        redirect_uri: redirectUri,
         code_verifier: codeVerifier
-    });
-    const response = await fetch(`${ENTRA_AUTHORITY}/${ENTRA_TENANT_ID}/oauth2/v2.0/token`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: body.toString()
-    });
-    if (!response.ok) {
-        throw new Error(`Entra token exchange failed: ${response.status} ${response.statusText}`);
+    };
+    try {
+        const response = await fetch(tokenUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams(bodyObj).toString()
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(`Entra token exchange failed: ${response.status} ${response.statusText} - ${data.error_description || JSON.stringify(data)}`);
+        }
+        return data;
     }
-    return await response.json();
+    catch (error) {
+        console.error('Token exchange error:', error);
+        throw error;
+    }
 }
