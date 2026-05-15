@@ -4,16 +4,11 @@ import { exchangeCodeForToken } from "../utils/entra.js"
 import { validateToken, checkGroupMembership } from "../utils/jwt.js"
 import { stateCache } from "../utils/cache.js"
 import { authCodeCache } from "../utils/authCodeCache.js"
-import { SERVICE_CALLBACK_URI } from "../config.js"
+import { SERVICE_CALLBACK_URI, MCP_SERVER_NAME } from "../config.js"
 
 const router = express.Router()
 
-/**
- * Handle Entra callback
- *
- * GET /finance/auth/callback
- */
-router.get("/finance/auth/callback", async (req, res) => {
+router.get(`/${MCP_SERVER_NAME}/auth/callback`, async (req, res) => {
 
   const { code, state, error, error_description } = req.query
 

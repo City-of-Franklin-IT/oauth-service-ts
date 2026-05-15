@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { validateConfig, PORT } from "./config.js";
+import { validateConfig, PORT, MCP_RESOURCE_PATH } from "./config.js";
 import { requestLogger } from "./middleware/logging.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import oauthChallengeMiddleware from "./middleware/oauthChallenge.js";
@@ -14,7 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(requestLogger);
-app.use("/mcp", oauthChallengeMiddleware);
+app.use(MCP_RESOURCE_PATH, oauthChallengeMiddleware);
 app.use("/", authorizeRouter);
 app.use("/", callbackRouter);
 app.use("/", validateRouter);

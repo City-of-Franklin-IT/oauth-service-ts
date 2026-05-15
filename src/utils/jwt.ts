@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 import jwksRsa from "jwks-rsa"
-import { ENTRA_AUTHORITY, ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_REQUIRED_GROUP_ID } from "../config.js"
+import { ENTRA_AUTHORITY, ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_REQUIRED_GROUP_IDS } from "../config.js"
 import * as AppTypes from "../types.js"
 
 const jwksClient = jwksRsa({
@@ -34,6 +34,7 @@ export async function validateToken(token: string): Promise<AppTypes.EntraTokenC
     `${ ENTRA_AUTHORITY }/${ ENTRA_TENANT_ID }/v2.0`,
     `https://sts.windows.net/${ ENTRA_TENANT_ID }/`
   ]
+
   if(!validIssuers.some(iss => claims.iss.startsWith(iss.replace(/\/$/, "")))) {
     throw new Error(`Invalid issuer: ${ claims.iss }`)
   }
@@ -42,6 +43,6 @@ export async function validateToken(token: string): Promise<AppTypes.EntraTokenC
 }
 
 export function checkGroupMembership(claims: AppTypes.EntraTokenClaimsInterface): boolean {
-
-  return claims.groups?.includes(ENTRA_REQUIRED_GROUP_ID!) ?? false
+  if (ENTRA_REQUIRED_GROUP_IDS.length === 0) return true
+  return claims.groups?.some(group => ENTRA_REQUIRED_GROUP_IDS.includes(group)) ?? false
 }

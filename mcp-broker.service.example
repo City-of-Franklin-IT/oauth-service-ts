@@ -1,0 +1,19 @@
+[Unit]
+Description={{BROKER_NAME}} MCP OAuth Broker
+After=network.target
+
+[Service]
+Type=simple
+User=oauth-broker
+Group=oauth-broker
+WorkingDirectory=/opt/oauth-brokers/{{BROKER_NAME}}-mcp-broker
+EnvironmentFile=/opt/oauth-brokers/{{BROKER_NAME}}-mcp-broker/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=10s
+
+StandardOutput=file:/var/log/mcp/{{BROKER_NAME}}/access.log
+StandardError=file:/var/log/mcp/{{BROKER_NAME}}/error.log
+
+[Install]
+WantedBy=multi-user.target

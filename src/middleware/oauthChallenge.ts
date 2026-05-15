@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
+import { MCP_SERVER_NAME, MCP_RESOURCE_PATH } from '../config.js'
+
+const BROKER_DOMAIN = 'https://mcp.franklintn.gov'
 
 const oauthChallengeMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
@@ -7,7 +10,7 @@ const oauthChallengeMiddleware = (req: Request, res: Response, next: NextFunctio
     res.status(401)
     res.setHeader(
       'WWW-Authenticate',
-      'Bearer realm="finance-mcp", resource_metadata_uri="https://mcp.franklintn.gov/.well-known/oauth-protected-resource/mcp/finance"'
+      `Bearer realm="${MCP_SERVER_NAME}-mcp", resource_metadata_uri="${BROKER_DOMAIN}/.well-known/oauth-protected-resource${MCP_RESOURCE_PATH}"`
     )
     res.setHeader('Content-Type', 'application/json')
     res.json({
